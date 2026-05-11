@@ -54,7 +54,7 @@ function App() {
             Bandara Internasional Mutiara SIS Al Jufri
           </h1>
           <p className="text-sm text-blue-100 mt-1">
-            Free Wi-Fi Captive Portal (Feedback & Connect)
+            Free Wi-Fi Captive Portal (Feedback)
           </p>
         </div>
 
