@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Star, Plane } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Star, Wifi } from "lucide-react";
 import { apiClient } from "./api/axios";
 
 function App() {
@@ -8,6 +8,7 @@ function App() {
   const [kategori, setKategori] = useState<string>("");
   const [komentar, setKomentar] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [lokasi, setLokasi] = useState<string>("Portal Utama");
   const activeRating = hoveredRating || rating;
 
   const listKategori = [
@@ -18,6 +19,20 @@ function App() {
     "Lainnya",
   ];
 
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const lokasiDariURL = queryParams.get("loc");
+
+    if (lokasiDariURL) {
+      setLokasi(lokasiDariURL.replace(/_/g, " "));
+    }
+  }, []);
+
+  const prosesKoneksiWiFi = () => {
+    alert(`Mengarahkan ke internet... (Lokasi tercatat: ${lokasi})`);
+    window.location.href = "https://google.com";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -25,36 +40,53 @@ function App() {
 
     try {
       await apiClient.post("/feedback", {
-        lokasi_scan: "Portal Utama",
+        lokasi_scan: lokasi,
         rating,
         kategori_layanan: kategori,
         komentar,
       });
 
-      alert("Terima kasih atas penilaian Anda! Mengalihkan ke internet...");
-      setRating(0);
-      setHoveredRating(0);
-      setKategori("");
-      setKomentar("");
+      prosesKoneksiWiFi();
     } catch (error) {
       console.error(error);
-      alert("Terjadi kesalahan saat mengirim data. Silakan coba lagi.");
+      alert(
+        "Gagal menyimpan feedback, tapi Anda tetap akan dihubungkan ke Wi-Fi.",
+      );
+      prosesKoneksiWiFi();
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSkip = async () => {
+    setIsLoading(true);
+
+    try {
+      await apiClient.post("/feedback", {
+        lokasi_scan: lokasi,
+        rating: 0,
+        kategori_layanan: "Skipped",
+        komentar: "",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      prosesKoneksiWiFi();
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-3xl shadow-xl overflow-hidden">
+      <div className="bg-white max-w-md w-full rounded-3xl shadow-xl overflow-hidden border border-gray-100">
         {/* Header Section */}
-        <div className="bg-blue-600 p-6 text-white text-center">
-          <Plane className="w-10 h-10 mx-auto mb-2" />
-          <h1 className="text-xl font-bold">
-            Bandara Internasional Mutiara SIS Al Jufri
+        <div className="bg-blue-600 p-8 text-white text-center relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full opacity-50 blur-2xl"></div>
+          <Wifi className="w-12 h-12 mx-auto mb-3 relative z-10" />
+          <h1 className="text-2xl font-bold relative z-10">
+            Free Wi-Fi Airport
           </h1>
-          <p className="text-sm text-blue-100 mt-1">
-            Free Wi-Fi Captive Portal (Feedback)
+          <p className="text-sm text-blue-100 mt-2 relative z-10">
+            Bantu kami jadi lebih baik, nikmati Wi-Fi sepuasnya.
           </p>
         </div>
 
@@ -64,9 +96,7 @@ function App() {
             <h2 className="text-lg font-semibold text-gray-800">
               Bagaimana pengalaman Anda hari ini?
             </h2>
-            <p className="text-sm text-gray-500">
-              Berikan penilaian untuk terhubung ke internet
-            </p>
+            <p className="text-sm text-gray-500">Lokasi aktif: {lokasi}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -85,14 +115,14 @@ function App() {
                   return (
                     <div
                       key={star}
-                      className="relative h-10 w-10 transition-transform hover:scale-110"
+                      className="relative h-12 w-12 transition-transform hover:scale-125"
                     >
-                      <Star className="h-10 w-10 text-gray-300" />
+                      <Star className="h-12 w-12 text-gray-200" />
                       <div
                         className="absolute inset-y-0 left-0 overflow-hidden"
                         style={{ width: `${fillPercentage * 100}%` }}
                       >
-                        <Star className="h-10 w-10 fill-yellow-400 text-yellow-400" />
+                        <Star className="h-12 w-12 fill-yellow-400 text-yellow-400 drop-shadow-md" />
                       </div>
 
                       <button
@@ -123,61 +153,66 @@ function App() {
 
             {/* Kategori Pilihan (Muncul jika rating sudah diisi) */}
             {rating > 0 && (
-              <div className="animate-fade-in">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Apa yang paling mendeskripsikan penilaian Anda?
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {listKategori.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => setKategori(item)}
-                      className={`cursor-pointer px-3 py-1.5 text-sm rounded-full border transition-all hover:-translate-y-0.5 ${
-                        kategori === item
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  ))}
+              <div className="animate-fade-in space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Apa yang membuat Anda memberi {rating.toFixed(1)} bintang?
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {listKategori.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setKategori(item)}
+                        className={`cursor-pointer px-4 py-2 text-sm rounded-full border transition-all hover:-translate-y-0.5 ${
+                          kategori === item
+                            ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Kolom Komentar */}
-            {rating > 0 && (
-              <div className="animate-fade-in">
-                <label
-                  htmlFor="komentar"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Saran atau masukan tambahan (opsional)
-                </label>
                 <textarea
                   id="komentar"
-                  rows={3}
+                  rows={2}
                   value={komentar}
                   onChange={(e) => setKomentar(e.target.value)}
-                  placeholder="Ceritakan lebih lanjut di sini..."
-                  className="w-full p-3 border border-gray-300 rounded-xl outline-none transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300"
+                  placeholder="Ada saran atau keluhan tambahan? (Opsional)"
+                  className="w-full p-3 text-sm border border-gray-200 rounded-xl outline-none bg-gray-50 transition-all focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 ></textarea>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 ${
+                    isLoading
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "cursor-pointer bg-blue-600 hover:bg-blue-700 hover:shadow-xl"
+                  }`}
+                >
+                  {isLoading ? "Menghubungkan..." : "Terhubung ke Internet"}
+                </button>
               </div>
             )}
 
-            {/* Tombol Submit */}
-            <button
-              type="submit"
-              disabled={rating === 0 || isLoading}
-              className={`w-full py-3 rounded-xl font-semibold text-white transition-all ${
-                rating > 0 && !isLoading
-                  ? "cursor-pointer bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                  : "bg-gray-300 cursor-not-allowed"
-              }`}
-            >
-              {isLoading ? "Mengirim..." : "Kirim & Hubungkan Wi-Fi"}
-            </button>
+            {rating === 0 && (
+              <div className="text-center pt-4">
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  disabled={isLoading}
+                  className="cursor-pointer text-sm font-medium text-gray-400 underline underline-offset-4 transition-colors hover:text-gray-600 disabled:cursor-not-allowed"
+                >
+                  {isLoading
+                    ? "Tunggu sebentar..."
+                    : "Lewati & Hubungkan Wi-Fi"}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
