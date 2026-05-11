@@ -11,8 +11,19 @@ import {
 import { LayoutDashboard, Users, Star, MessageSquare } from "lucide-react";
 import { apiClient } from "../api/axios";
 
+type CategoryStat = {
+  kategori_layanan: string;
+  total: number;
+};
+
+type DashboardStats = {
+  average_rating: number;
+  total_feedbacks: number;
+  categories: CategoryStat[];
+};
+
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -21,9 +32,8 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      // Memanggil endpoint stats di Laravel (pastikan endpoint ini sudah Anda buat)
       const response = await apiClient.get("/feedback/stats");
-      setStats(response.data);
+      setStats(response.data.data);
     } catch (error) {
       console.error("Gagal mengambil data statistik:", error);
     } finally {
@@ -61,7 +71,7 @@ export default function AdminDashboard() {
                 Total Penumpang Feedback
               </p>
               <h2 className="text-3xl font-bold text-gray-800">
-                {stats?.total || 0}
+                {stats?.total_feedbacks || 0}
               </h2>
             </div>
           </div>
@@ -75,7 +85,7 @@ export default function AdminDashboard() {
                 Rata-rata Rating
               </p>
               <h2 className="text-3xl font-bold text-gray-800">
-                {stats?.average || 0}{" "}
+                {stats?.average_rating || 0}{" "}
                 <span className="text-sm text-gray-400">/ 5.0</span>
               </h2>
             </div>
@@ -89,11 +99,9 @@ export default function AdminDashboard() {
               <p className="text-sm text-gray-500 font-medium">
                 Area Terbanyak Disorot
               </p>
-              {/* Mengambil nama kategori dengan jumlah terbanyak dari array categories */}
               <h2 className="text-xl font-bold text-gray-800">
-                {stats?.categories?.sort(
-                  (a: any, b: any) => b.total - a.total,
-                )[0]?.kategori_layanan || "-"}
+                {stats?.categories?.sort((a, b) => b.total - a.total)[0]
+                  ?.kategori_layanan || "-"}
               </h2>
             </div>
           </div>
