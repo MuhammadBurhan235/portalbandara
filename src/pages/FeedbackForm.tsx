@@ -1,11 +1,36 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { Star, Wifi } from "lucide-react";
 import { apiClient } from "../api/axios";
 
+type FeedbackCategory =
+  | "Kebersihan"
+  | "Kecepatan Layanan"
+  | "Fasilitas"
+  | "Keamanan"
+  | "Lainnya";
+
+const WIFI_FALLBACK_URL =
+  import.meta.env.VITE_WIFI_FALLBACK_URL?.trim() || "https://google.com";
+const HOTSPOT_USERNAME = import.meta.env.VITE_HOTSPOT_USERNAME?.trim();
+const HOTSPOT_PASSWORD = import.meta.env.VITE_HOTSPOT_PASSWORD?.trim();
+
+const getErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Gagal menyimpan feedback."
+    );
+  }
+
+  return "Gagal menyimpan feedback.";
+};
+
 function FeedbackForm() {
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
-  const [kategori, setKategori] = useState<string>("");
+  const [kategori, setKategori] = useState<FeedbackCategory | "">("");
   const [komentar, setKomentar] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [lokasi, setLokasi] = useState<string>("Portal Utama");
@@ -13,7 +38,7 @@ function FeedbackForm() {
   const [macAddress, setMacAddress] = useState<string>("");
   const activeRating = hoveredRating || rating;
 
-  const listKategori = [
+  const listKategori: FeedbackCategory[] = [
     "Kebersihan",
     "Kecepatan Layanan",
     "Fasilitas",
@@ -41,14 +66,24 @@ function FeedbackForm() {
   }, []);
 
   const prosesKoneksiWiFi = () => {
-    if (linkLogin) {
-      const urlTujuan = `${linkLogin}?username=guest&password=123`;
-      window.location.href = urlTujuan;
+    if (linkLogin && HOTSPOT_USERNAME && HOTSPOT_PASSWORD) {
+      const urlTujuan = new URL(linkLogin, window.location.origin);
+      urlTujuan.searchParams.set("username", HOTSPOT_USERNAME);
+      urlTujuan.searchParams.set("password", HOTSPOT_PASSWORD);
+      window.location.assign(urlTujuan.toString());
       return;
     }
 
-    console.log(`MAC Address terdeteksi: ${macAddress || "Tidak ada"}`);
-    window.location.href = "https://google.com";
+    if (linkLogin) {
+      window.location.assign(linkLogin);
+      return;
+    }
+
+    if (import.meta.env.DEV && macAddress) {
+      console.info(`MAC Address terdeteksi: ${macAddress}`);
+    }
+
+    window.location.assign(WIFI_FALLBACK_URL);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,9 +102,7 @@ function FeedbackForm() {
       prosesKoneksiWiFi();
     } catch (error) {
       console.error(error);
-      alert(
-        "Gagal menyimpan feedback, tapi Anda tetap akan dihubungkan ke Wi-Fi.",
-      );
+      alert(`${getErrorMessage(error)} Anda tetap akan dihubungkan ke Wi-Fi.`);
       prosesKoneksiWiFi();
     } finally {
       setIsLoading(false);
@@ -88,6 +121,9 @@ function FeedbackForm() {
       });
     } catch (error) {
       console.error(error);
+      if (import.meta.env.DEV) {
+        console.info(getErrorMessage(error));
+      }
     } finally {
       prosesKoneksiWiFi();
     }
