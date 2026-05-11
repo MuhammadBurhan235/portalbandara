@@ -130,24 +130,24 @@ function FeedbackForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+    <div className="flex min-h-screen items-center justify-center px-4 py-6 sm:p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
         {/* Header Section */}
-        <div className="bg-blue-600 p-8 text-white text-center relative overflow-hidden">
+        <div className="relative overflow-hidden bg-blue-600 px-6 py-7 text-center text-white sm:p-8">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full opacity-50 blur-2xl"></div>
-          <Wifi className="w-12 h-12 mx-auto mb-3 relative z-10" />
-          <h1 className="text-2xl font-bold relative z-10">
+          <Wifi className="relative z-10 mx-auto mb-3 h-10 w-10 sm:h-12 sm:w-12" />
+          <h1 className="relative z-10 text-xl font-bold sm:text-2xl">
             Free Wi-Fi Airport
           </h1>
-          <p className="text-sm text-blue-100 mt-2 relative z-10">
+          <p className="relative z-10 mt-2 text-sm leading-relaxed text-blue-100">
             Bantu kami jadi lebih baik, nikmati Wi-Fi sepuasnya.
           </p>
         </div>
 
         {/* Form Section */}
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-800">
+        <div className="p-5 sm:p-6">
+          <div className="mb-6 text-center">
+            <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
               Bagaimana pengalaman Anda hari ini?
             </h2>
             <p className="text-sm text-gray-500">Lokasi aktif: {lokasi}</p>
@@ -157,7 +157,7 @@ function FeedbackForm() {
             {/* Rating Bintang */}
             <div>
               <div
-                className="flex justify-center gap-2"
+                className="flex flex-wrap justify-center gap-2 sm:flex-nowrap"
                 onMouseLeave={() => setHoveredRating(0)}
               >
                 {[1, 2, 3, 4, 5].map((star) => {
@@ -169,14 +169,14 @@ function FeedbackForm() {
                   return (
                     <div
                       key={star}
-                      className="relative h-12 w-12 transition-transform hover:scale-125"
+                      className="relative h-11 w-11 transition-transform hover:scale-125 sm:h-12 sm:w-12"
                     >
-                      <Star className="h-12 w-12 text-gray-200" />
+                      <Star className="h-11 w-11 text-gray-200 sm:h-12 sm:w-12" />
                       <div
                         className="absolute inset-y-0 left-0 overflow-hidden"
                         style={{ width: `${fillPercentage * 100}%` }}
                       >
-                        <Star className="h-12 w-12 fill-yellow-400 text-yellow-400 drop-shadow-md" />
+                        <Star className="h-11 w-11 fill-yellow-400 text-yellow-400 drop-shadow-md sm:h-12 sm:w-12" />
                       </div>
 
                       <button
@@ -198,7 +198,7 @@ function FeedbackForm() {
                 })}
               </div>
 
-              <p className="mt-3 text-center text-sm text-gray-500">
+              <p className="mt-3 text-center text-xs text-gray-500 sm:text-sm">
                 {rating > 0
                   ? `Rating Anda: ${rating.toFixed(1)} / 5.0`
                   : "Klik sisi kiri atau kanan bintang untuk memberi rating 0.5"}
@@ -218,7 +218,7 @@ function FeedbackForm() {
                         key={item}
                         type="button"
                         onClick={() => setKategori(item)}
-                        className={`cursor-pointer px-4 py-2 text-sm rounded-full border transition-all hover:-translate-y-0.5 ${
+                        className={`cursor-pointer rounded-full border px-3 py-2 text-sm transition-all hover:-translate-y-0.5 sm:px-4 ${
                           kategori === item
                             ? "bg-blue-600 text-white border-blue-600 shadow-md"
                             : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
@@ -236,13 +236,13 @@ function FeedbackForm() {
                   value={komentar}
                   onChange={(e) => setKomentar(e.target.value)}
                   placeholder="Ada saran atau keluhan tambahan? (Opsional)"
-                  className="w-full p-3 text-sm border border-gray-200 rounded-xl outline-none bg-gray-50 transition-all focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 ></textarea>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 ${
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white shadow-lg transition-all sm:text-base ${
                     isLoading
                       ? "bg-gray-300 cursor-not-allowed"
                       : "cursor-pointer bg-blue-600 hover:bg-blue-700 hover:shadow-xl"

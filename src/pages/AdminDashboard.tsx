@@ -70,12 +70,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 sm:py-8">
       <div className="max-w-6xl mx-auto">
         {/* Header Dashboard */}
-        <div className="flex items-center gap-3 mb-8">
-          <LayoutDashboard className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-800">
+        <div className="mb-6 flex items-start gap-3 sm:mb-8 sm:items-center">
+          <LayoutDashboard className="h-7 w-7 shrink-0 text-blue-600 sm:h-8 sm:w-8" />
+          <h1 className="text-2xl font-bold leading-tight text-gray-800 sm:text-3xl">
             Dashboard Manajemen Bandara
           </h1>
         </div>
@@ -87,58 +87,63 @@ export default function AdminDashboard() {
         )}
 
         {/* Kartu Ringkasan (Summary Cards) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
-              <Users className="w-8 h-8" />
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-xl bg-blue-50 p-3 text-blue-600 sm:p-4">
+              <Users className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500 font-medium">
                 Total Penumpang Feedback
               </p>
-              <h2 className="text-3xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
                 {stats?.total_feedbacks || 0}
               </h2>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-4 bg-yellow-50 rounded-xl text-yellow-500">
-              <Star className="w-8 h-8" />
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-xl bg-yellow-50 p-3 text-yellow-500 sm:p-4">
+              <Star className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500 font-medium">
                 Rata-rata Rating
               </p>
-              <h2 className="text-3xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
                 {ratingFormatter.format(stats?.average_rating || 0)}{" "}
                 <span className="text-sm text-gray-400">/ 5.0</span>
               </h2>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-4 bg-green-50 rounded-xl text-green-600">
-              <MessageSquare className="w-8 h-8" />
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-xl bg-green-50 p-3 text-green-600 sm:p-4">
+              <MessageSquare className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500 font-medium">
                 Area Terbanyak Disorot
               </p>
-              <h2 className="text-xl font-bold text-gray-800">{topCategory}</h2>
+              <h2 className="text-lg font-bold text-gray-800 wrap-break-word sm:text-xl">
+                {topCategory}
+              </h2>
             </div>
           </div>
         </div>
 
         {/* Grafik Kategori Layanan */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
+        <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="mb-4 text-lg font-bold text-gray-800 sm:mb-6">
             Distribusi Kategori Layanan
           </h3>
-          <div className="h-80 w-full">
+          <div className="h-72 w-full sm:h-80">
             {stats?.categories?.length ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.categories}>
+                <BarChart
+                  data={stats.categories}
+                  margin={{ top: 8, right: 8, left: -20, bottom: 8 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
@@ -148,8 +153,14 @@ export default function AdminDashboard() {
                     dataKey="kategori_layanan"
                     axisLine={false}
                     tickLine={false}
+                    interval={0}
+                    tick={{ fontSize: 12 }}
                   />
-                  <YAxis axisLine={false} tickLine={false} />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
                   <Tooltip
                     cursor={{ fill: "#F3F4F6" }}
                     contentStyle={{
@@ -162,7 +173,7 @@ export default function AdminDashboard() {
                     dataKey="total"
                     fill="#2563EB"
                     radius={[6, 6, 0, 0]}
-                    barSize={50}
+                    maxBarSize={50}
                   />
                 </BarChart>
               </ResponsiveContainer>
