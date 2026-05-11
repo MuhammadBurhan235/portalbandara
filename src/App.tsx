@@ -9,6 +9,8 @@ function App() {
   const [komentar, setKomentar] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [lokasi, setLokasi] = useState<string>("Portal Utama");
+  const [linkLogin, setLinkLogin] = useState<string>("");
+  const [macAddress, setMacAddress] = useState<string>("");
   const activeRating = hoveredRating || rating;
 
   const listKategori = [
@@ -22,14 +24,30 @@ function App() {
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const lokasiDariURL = queryParams.get("loc");
+    const urlLoginMikrotik = queryParams.get("link-login");
+    const mac = queryParams.get("mac");
 
     if (lokasiDariURL) {
       setLokasi(lokasiDariURL.replace(/_/g, " "));
     }
+
+    if (urlLoginMikrotik) {
+      setLinkLogin(urlLoginMikrotik);
+    }
+
+    if (mac) {
+      setMacAddress(mac);
+    }
   }, []);
 
   const prosesKoneksiWiFi = () => {
-    alert(`Mengarahkan ke internet... (Lokasi tercatat: ${lokasi})`);
+    if (linkLogin) {
+      const urlTujuan = `${linkLogin}?username=guest&password=123`;
+      window.location.href = urlTujuan;
+      return;
+    }
+
+    console.log(`MAC Address terdeteksi: ${macAddress || "Tidak ada"}`);
     window.location.href = "https://google.com";
   };
 
