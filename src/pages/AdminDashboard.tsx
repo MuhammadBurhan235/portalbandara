@@ -16,6 +16,16 @@ type CategoryStat = {
   total: number;
 };
 
+const categoryDescriptions: Record<string, string> = {
+  "Informasi & Prosedur":
+    "Kejelasan alur, papan informasi, dan prosedur layanan.",
+  "Sarana Prasarana":
+    "Kualitas fasilitas, kebersihan, dan kenyamanan area bandara.",
+  "Sikap Petugas": "Keramahan, empati, dan profesionalitas petugas layanan.",
+  "Waktu & Biaya": "Kecepatan proses dan persepsi efisiensi biaya layanan.",
+  Lainnya: "Masukan tambahan di luar unsur layanan utama.",
+};
+
 type DashboardStats = {
   average_rating: number;
   total_feedbacks: number;
@@ -60,6 +70,10 @@ export default function AdminDashboard() {
     ? [...stats.categories].sort((a, b) => b.total - a.total)[0]
         ?.kategori_layanan
     : "-";
+  const topCategoryDescription = topCategory
+    ? categoryDescriptions[topCategory] ||
+      "Masukan dengan perhatian tertinggi dari penumpang."
+    : "Belum ada data kategori yang dominan.";
 
   if (isLoading) {
     return (
@@ -123,11 +137,14 @@ export default function AdminDashboard() {
             </div>
             <div className="min-w-0">
               <p className="text-sm text-gray-500 font-medium">
-                Area Terbanyak Disorot
+                Unsur Paling Disorot
               </p>
               <h2 className="text-lg font-bold text-gray-800 wrap-break-word sm:text-xl">
                 {topCategory}
               </h2>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500 sm:text-sm">
+                {topCategoryDescription}
+              </p>
             </div>
           </div>
         </div>
@@ -135,7 +152,7 @@ export default function AdminDashboard() {
         {/* Grafik Kategori Layanan */}
         <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
           <h3 className="mb-4 text-lg font-bold text-gray-800 sm:mb-6">
-            Distribusi Kategori Layanan
+            Distribusi Unsur Layanan
           </h3>
           <div className="h-72 w-full sm:h-80">
             {stats?.categories?.length ? (
@@ -154,6 +171,9 @@ export default function AdminDashboard() {
                     axisLine={false}
                     tickLine={false}
                     interval={0}
+                    angle={-18}
+                    textAnchor="end"
+                    height={60}
                     tick={{ fontSize: 12 }}
                   />
                   <YAxis
