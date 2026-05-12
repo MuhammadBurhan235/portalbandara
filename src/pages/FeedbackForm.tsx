@@ -16,7 +16,7 @@ const HOTSPOT_USERNAME = import.meta.env.VITE_HOTSPOT_USERNAME?.trim();
 const HOTSPOT_PASSWORD = import.meta.env.VITE_HOTSPOT_PASSWORD?.trim();
 const KEMENHUB_SURVEY_URL =
   import.meta.env.VITE_KEMENHUB_SURVEY_URL?.trim() ||
-  "https://skm.dephub.go.id/survey/enumeration/f3c787bc-4518-11f1-b388-313134383039";
+  "https://skm.dephub.go.id/survey/enumeration/f3c787bc-4518-11f1-b388-313134383039/3ff48bda-4b87-11eb-a51f-323334333033/158f1134-d608-11ea-aa82-313130373539";
 
 const getErrorMessage = (error: unknown) => {
   if (axios.isAxiosError(error)) {
@@ -40,7 +40,6 @@ function FeedbackForm() {
   const [linkLogin, setLinkLogin] = useState<string>("");
   const [macAddress, setMacAddress] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const activeRating = hoveredRating || rating;
 
   const listKategori: FeedbackCategory[] = [
     "Informasi & Prosedur",
@@ -139,9 +138,8 @@ function FeedbackForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-6 sm:p-4">
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-        {/* Header Section */}
         <div className="relative overflow-hidden bg-blue-600 px-6 py-7 text-center text-white sm:p-8">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full opacity-50 blur-2xl"></div>
+          <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-blue-500 opacity-50 blur-2xl"></div>
           <Wifi className="relative z-10 mx-auto mb-3 h-10 w-10 sm:h-12 sm:w-12" />
           <h1 className="relative z-10 text-xl font-bold sm:text-2xl">
             Free Wi-Fi Airport
@@ -153,7 +151,6 @@ function FeedbackForm() {
           </p>
         </div>
 
-        {/* Form Section */}
         <div className="p-5 sm:p-6">
           {isSubmitted ? (
             <div className="animate-fade-in space-y-6 text-center">
@@ -197,54 +194,35 @@ function FeedbackForm() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Rating Bintang */}
                 <div>
                   <div
                     className="flex flex-wrap justify-center gap-2 sm:flex-nowrap"
                     onMouseLeave={() => setHoveredRating(0)}
                   >
-                    {[1, 2, 3, 4, 5].map((star) => {
-                      const fillPercentage = Math.max(
-                        0,
-                        Math.min(1, activeRating - (star - 1)),
-                      );
-
-                      return (
-                        <div
-                          key={star}
-                          className="relative h-11 w-11 transition-transform hover:scale-125 sm:h-12 sm:w-12"
-                        >
-                          <Star className="h-11 w-11 text-gray-200 sm:h-12 sm:w-12" />
-                          <div
-                            className="absolute inset-y-0 left-0 overflow-hidden"
-                            style={{ width: `${fillPercentage * 100}%` }}
-                          >
-                            <Star className="h-11 w-11 fill-yellow-400 text-yellow-400 drop-shadow-md sm:h-12 sm:w-12" />
-                          </div>
-
-                          <button
-                            type="button"
-                            aria-label={`Beri rating ${star - 0.5}`}
-                            onClick={() => setRating(star - 0.5)}
-                            onMouseEnter={() => setHoveredRating(star - 0.5)}
-                            className="absolute inset-y-0 left-0 w-1/2 cursor-pointer rounded-l-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
-                          />
-                          <button
-                            type="button"
-                            aria-label={`Beri rating ${star}`}
-                            onClick={() => setRating(star)}
-                            onMouseEnter={() => setHoveredRating(star)}
-                            className="absolute inset-y-0 right-0 w-1/2 cursor-pointer rounded-r-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
-                          />
-                        </div>
-                      );
-                    })}
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        aria-label={`Beri rating ${star}`}
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHoveredRating(star)}
+                        className="cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                      >
+                        <Star
+                          className={`h-11 w-11 transition-all duration-200 sm:h-12 sm:w-12 ${
+                            star <= (hoveredRating || rating)
+                              ? "fill-yellow-400 text-yellow-400 drop-shadow-md"
+                              : "text-gray-200"
+                          }`}
+                        />
+                      </button>
+                    ))}
                   </div>
 
                   <p className="mt-3 text-center text-xs text-gray-500 sm:text-sm">
                     {rating > 0
-                      ? `Rating Anda: ${rating.toFixed(1)} / 5.0`
-                      : "Klik sisi kiri atau kanan bintang untuk memberi rating 0.5"}
+                      ? `Rating Anda: ${rating} / 5`
+                      : "Pilih rating dari 1 sampai 5 bintang"}
                   </p>
                 </div>
 
@@ -252,8 +230,7 @@ function FeedbackForm() {
                   <div className="animate-fade-in space-y-5">
                     <div>
                       <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Apa yang membuat Anda memberi {rating.toFixed(1)}{" "}
-                        bintang?
+                        Apa yang membuat Anda memberi {rating} bintang?
                       </label>
                       <div className="flex flex-wrap gap-2">
                         {listKategori.map((item) => (
