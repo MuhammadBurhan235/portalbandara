@@ -16,7 +16,7 @@ const HOTSPOT_USERNAME = import.meta.env.VITE_HOTSPOT_USERNAME?.trim();
 const HOTSPOT_PASSWORD = import.meta.env.VITE_HOTSPOT_PASSWORD?.trim();
 const KEMENHUB_SURVEY_URL =
   import.meta.env.VITE_KEMENHUB_SURVEY_URL?.trim() ||
-  "https://skm.dephub.go.id/survey/enumeration/f3c787bc-4518-11f1-b388-313134383039/3ff48bda-4b87-11eb-a51f-323334333033/158f1134-d608-11ea-aa82-313130373539";
+  "https://skm.dephub.go.id/ly/RyaWiIlE";
 
 const getErrorMessage = (error: unknown) => {
   if (axios.isAxiosError(error)) {
