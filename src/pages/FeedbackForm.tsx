@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileCheck, Globe, Star, Wifi } from "lucide-react";
 import { apiClient } from "../api/axios";
 
@@ -40,6 +40,10 @@ function FeedbackForm() {
   const [linkLogin, setLinkLogin] = useState<string>("");
   const [macAddress, setMacAddress] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
+    null,
+  );
+  const hasTriggeredRedirect = useRef(false);
 
   const listKategori: FeedbackCategory[] = [
     "Informasi & Prosedur",
@@ -68,6 +72,37 @@ function FeedbackForm() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!isSubmitted) {
+      setRedirectCountdown(null);
+      hasTriggeredRedirect.current = false;
+      return;
+    }
+
+    hasTriggeredRedirect.current = false;
+    setRedirectCountdown(5);
+
+    const countdownInterval = window.setInterval(() => {
+      setRedirectCountdown((currentCountdown) => {
+        if (currentCountdown === null) {
+          return 0;
+        }
+
+        return Math.max(currentCountdown - 1, 0);
+      });
+    }, 1000);
+
+    const redirectTimeout = window.setTimeout(() => {
+      hasTriggeredRedirect.current = true;
+      prosesKoneksiWiFi(KEMENHUB_SURVEY_URL);
+    }, 5000);
+
+    return () => {
+      window.clearInterval(countdownInterval);
+      window.clearTimeout(redirectTimeout);
+    };
+  }, [isSubmitted, linkLogin, macAddress]);
+
   const prosesKoneksiWiFi = (targetUrl: string) => {
     if (linkLogin && HOTSPOT_USERNAME && HOTSPOT_PASSWORD) {
       const urlTujuan = new URL(linkLogin, window.location.origin);
@@ -90,6 +125,11 @@ function FeedbackForm() {
     }
 
     window.location.assign(targetUrl);
+  };
+
+  const handleRedirect = (targetUrl: string) => {
+    hasTriggeredRedirect.current = true;
+    prosesKoneksiWiFi(targetUrl);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,10 +205,15 @@ function FeedbackForm() {
                   lebih unggul.
                 </p>
 
+                <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                  Anda akan diarahkan otomatis ke survei Kemenhub dalam{" "}
+                  <b>{redirectCountdown ?? 0}</b> detik.
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => prosesKoneksiWiFi(KEMENHUB_SURVEY_URL)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-blue-700 sm:text-base"
+                  onClick={() => handleRedirect(KEMENHUB_SURVEY_URL)}
+                  className="cursor-pointer flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-blue-700 sm:text-base"
                 >
                   <FileCheck className="h-5 w-5" />
                   Isi Survei Kemenhub
@@ -176,8 +221,8 @@ function FeedbackForm() {
 
                 <button
                   type="button"
-                  onClick={() => prosesKoneksiWiFi(WIFI_FALLBACK_URL)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-200 sm:text-base"
+                  onClick={() => handleRedirect(WIFI_FALLBACK_URL)}
+                  className="cursor-pointer flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-200 sm:text-base"
                 >
                   <Globe className="h-5 w-5" />
                   Lewati & Mulai Browsing

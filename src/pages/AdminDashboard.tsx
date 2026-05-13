@@ -2,19 +2,56 @@ import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { LayoutDashboard, Users, Star, MessageSquare } from "lucide-react";
+import {
+  CalendarDays,
+  Download,
+  LayoutDashboard,
+  MapPinned,
+  MessageSquare,
+  Star,
+  Users,
+} from "lucide-react";
 import { apiClient } from "../api/axios";
 
 type CategoryStat = {
   kategori_layanan: string;
   total: number;
 };
+
+type TrendStat = {
+  date: string;
+  total_feedbacks: number;
+  average_rating: number | null;
+};
+
+type RecentComment = {
+  id: number;
+  lokasi_scan: string;
+  rating: number;
+  kategori_layanan: string | null;
+  komentar: string;
+  created_at: string;
+};
+
+type LocationStat = {
+  lokasi_scan: string;
+  total: number;
+};
+
+type AppliedFilters = {
+  location: string | null;
+  range: RangeOption;
+};
+
+type RangeOption = "today" | "7d" | "30d" | "90d" | "all";
 
 const categoryDescriptions: Record<string, string> = {
   "Informasi & Prosedur":
@@ -30,6 +67,10 @@ type DashboardStats = {
   average_rating: number;
   total_feedbacks: number;
   categories: CategoryStat[];
+  trends: TrendStat[];
+  recent_comments: RecentComment[];
+  locations: LocationStat[];
+  filters: AppliedFilters;
 };
 
 type StatsResponse = {
@@ -42,19 +83,41 @@ const ratingFormatter = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 2,
 });
 
+const dateFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+const rangeOptions: Array<{ label: string; value: RangeOption }> = [
+  { label: "Hari ini", value: "today" },
+  { label: "7 hari", value: "7d" },
+  { label: "30 hari", value: "30d" },
+  { label: "90 hari", value: "90d" },
+  { label: "Semua data", value: "all" },
+];
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
 
   useEffect(() => {
     void fetchStats();
-  }, []);
+  }, [selectedLocation, selectedRange]);
 
   const fetchStats = async () => {
     try {
+      setIsLoading(true);
       setErrorMessage("");
-      const response = await apiClient.get<StatsResponse>("/feedback/stats");
+      const response = await apiClient.get<StatsResponse>("/feedback/stats", {
+        params: {
+          range: selectedRange,
+          ...(selectedLocation !== "all" ? { location: selectedLocation } : {}),
+        },
+      });
       setStats(response.data.data);
     } catch (error) {
       console.error("Gagal mengambil data statistik:", error);
@@ -66,11 +129,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const topCategory = stats?.categories?.length
-    ? [...stats.categories].sort((a, b) => b.total - a.total)[0]
-        ?.kategori_layanan
-    : "-";
-  const topCategoryDescription = topCategory
+  const handleExport = () => {
+    const exportUrl = apiClient.getUri({
+      url: "/feedback/export",
+      params: {
+        range: selectedRange,
+        ...(selectedLocation !== "all" ? { location: selectedLocation } : {}),
+      },
+    });
+
+    window.open(exportUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const topCategory = stats?.categories?.[0]?.kategori_layanan ?? "-";
+  const topCategoryDescription = stats?.categories?.length
     ? categoryDescriptions[topCategory] ||
       "Masukan dengan perhatian tertinggi dari penumpang."
     : "Belum ada data kategori yang dominan.";
@@ -99,6 +171,56 @@ export default function AdminDashboard() {
             {errorMessage}
           </div>
         )}
+
+        <div className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:grid-cols-[1.2fr_1fr_auto] sm:items-end sm:p-6">
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <MapPinned className="h-4 w-4 text-blue-600" />
+              Filter lokasi
+            </label>
+            <select
+              value={selectedLocation}
+              onChange={(event) => setSelectedLocation(event.target.value)}
+              className="cursor-pointer w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="all">Semua lokasi</option>
+              {stats?.locations.map((location) => (
+                <option key={location.lokasi_scan} value={location.lokasi_scan}>
+                  {location.lokasi_scan} ({location.total})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <CalendarDays className="h-4 w-4 text-blue-600" />
+              Rentang waktu
+            </label>
+            <select
+              value={selectedRange}
+              onChange={(event) =>
+                setSelectedRange(event.target.value as RangeOption)
+              }
+              className="cursor-pointer w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            >
+              {rangeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExport}
+            className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+        </div>
 
         {/* Kartu Ringkasan (Summary Cards) */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
@@ -149,60 +271,193 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Grafik Kategori Layanan */}
-        <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
-          <h3 className="mb-4 text-lg font-bold text-gray-800 sm:mb-6">
-            Distribusi Unsur Layanan
-          </h3>
-          <div className="h-72 w-full sm:h-80">
-            {stats?.categories?.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={stats.categories}
-                  margin={{ top: 8, right: 8, left: -20, bottom: 8 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#E5E7EB"
-                  />
-                  <XAxis
-                    dataKey="kategori_layanan"
-                    axisLine={false}
-                    tickLine={false}
-                    interval={0}
-                    angle={-18}
-                    textAnchor="end"
-                    height={60}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "#F3F4F6" }}
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "none",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    }}
-                  />
-                  <Bar
-                    dataKey="total"
-                    fill="#2563EB"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={50}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
-                Belum ada kategori layanan yang bisa ditampilkan.
+        <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-4 sm:mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Distribusi Unsur Layanan
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Membandingkan unsur yang paling sering disebut penumpang.
+                </p>
               </div>
-            )}
+            </div>
+            <div className="h-72 w-full sm:h-80">
+              {stats?.categories?.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stats.categories}
+                    margin={{ top: 8, right: 8, left: -20, bottom: 8 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#E5E7EB"
+                    />
+                    <XAxis
+                      dataKey="kategori_layanan"
+                      axisLine={false}
+                      tickLine={false}
+                      interval={0}
+                      angle={-18}
+                      textAnchor="end"
+                      height={60}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "#F3F4F6" }}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      }}
+                    />
+                    <Bar
+                      dataKey="total"
+                      fill="#2563EB"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={50}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
+                  Belum ada kategori layanan yang bisa ditampilkan.
+                </div>
+              )}
+            </div>
           </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-lg font-bold text-gray-800">
+                Tren Rating Harian
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Memantau perubahan kualitas layanan dari hari ke hari.
+              </p>
+            </div>
+            <div className="h-72 w-full sm:h-80">
+              {stats?.trends?.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={stats.trends.map((trend) => ({
+                      ...trend,
+                      date_label: dateFormatter.format(new Date(trend.date)),
+                    }))}
+                    margin={{ top: 8, right: 8, left: -20, bottom: 8 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#E5E7EB"
+                    />
+                    <XAxis
+                      dataKey="date_label"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis
+                      domain={[0, 5]}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        const numericValue = Number(value ?? 0);
+
+                        if (name === "average_rating") {
+                          return [
+                            ratingFormatter.format(numericValue),
+                            "Rata-rata rating",
+                          ];
+                        }
+
+                        return [numericValue, "Total feedback"];
+                      }}
+                      labelFormatter={(label) => `Tanggal: ${label}`}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="average_rating"
+                      stroke="#2563EB"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
+                  Belum ada tren yang bisa ditampilkan untuk filter ini.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-start justify-between gap-4 sm:mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800">
+                Komentar Terbaru Penumpang
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Ringkasan masukan terkini berdasarkan filter aktif.
+              </p>
+            </div>
+            <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              {stats?.filters.location ?? "Semua lokasi"} • {selectedRange}
+            </div>
+          </div>
+
+          {stats?.recent_comments?.length ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {stats.recent_comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {comment.lokasi_scan}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {dateFormatter.format(new Date(comment.created_at))}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
+                      {comment.rating}/5
+                    </span>
+                  </div>
+                  <p className="mb-3 text-sm leading-relaxed text-gray-700">
+                    {comment.komentar}
+                  </p>
+                  <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                    {comment.kategori_layanan || "Tanpa kategori"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex min-h-44 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
+              Belum ada komentar yang bisa ditampilkan untuk filter ini.
+            </div>
+          )}
         </div>
       </div>
     </div>
