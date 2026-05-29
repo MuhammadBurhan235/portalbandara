@@ -48,15 +48,24 @@ const formatFileSize = (size: number) => {
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 };
 
+const buildPdfFilename = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+
+  return `Rekap MCU Jan-Des 2022-${day}${month}${year}.pdf`;
+};
+
 const extractFilename = (contentDispositionHeader?: string) => {
   if (!contentDispositionHeader) {
-    return `rekap-excel-${Date.now()}.pdf`;
+    return buildPdfFilename();
   }
 
   const filenameMatch = contentDispositionHeader.match(
     /filename="?([^";]+)"?/i,
   );
-  return filenameMatch?.[1] || `rekap-excel-${Date.now()}.pdf`;
+  return filenameMatch?.[1] || buildPdfFilename();
 };
 
 const getApiErrorMessage = async (error: unknown) => {
