@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -13,6 +14,7 @@ import {
 import {
   CalendarDays,
   Download,
+  FileSpreadsheet,
   LayoutDashboard,
   MapPinned,
   MessageSquare,
@@ -212,14 +214,24 @@ export default function AdminDashboard() {
             </select>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExport}
-            className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </button>
+          <div className="flex flex-col gap-3 sm:items-stretch">
+            <Link
+              to="/admin/excel-to-pdf"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all hover:bg-blue-100"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel ke PDF
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleExport}
+              className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Kartu Ringkasan (Summary Cards) */}
