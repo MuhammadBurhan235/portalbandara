@@ -35,6 +35,21 @@ const monthOrder = [
   "desember",
 ] as const;
 
+const monthShortLabels = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Ags",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
+] as const;
+
 const getMonthIndexFromFilename = (filename: string) => {
   const normalizedFilename = filename.toLowerCase();
   return monthOrder.findIndex((month) => normalizedFilename.includes(month));
@@ -48,24 +63,108 @@ const formatFileSize = (size: number) => {
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 };
 
-const buildPdfFilename = () => {
+const normalizeFilenamePart = (filename: string) => {
+  return filename
+    .replace(/\.[^.]+$/, "")
+    .replaceAll(/[_-]+/g, " ")
+    .replaceAll(/\s+/g, " ")
+    .trim();
+};
+
+const extractYear = (filename: string) => {
+  return filename.match(/\b(19|20)\d{2}\b/)?.[0] ?? null;
+};
+
+const buildCommonTitle = (filenames: string[]) => {
+  const tokenizedNames = filenames.map((filename) =>
+    normalizeFilenamePart(filename)
+      .split(/\s+/)
+      .filter(
+        (token) =>
+          !monthOrder.includes(
+            token.toLowerCase() as (typeof monthOrder)[number],
+          ),
+      )
+      .filter((token) => !extractYear(token)),
+  );
+
+  let commonTokens = tokenizedNames[0] ?? [];
+
+  tokenizedNames.slice(1).forEach((tokens) => {
+    const remainingTokens = [...tokens];
+    const nextCommonTokens: string[] = [];
+
+    commonTokens.forEach((token) => {
+      const matchIndex = remainingTokens.findIndex(
+        (candidate) => candidate === token,
+      );
+
+      if (matchIndex === -1) {
+        return;
+      }
+
+      nextCommonTokens.push(token);
+      remainingTokens.splice(0, matchIndex + 1);
+    });
+
+    commonTokens = nextCommonTokens;
+  });
+
+  return commonTokens.join(" ").trim();
+};
+
+const buildPdfFilename = (filenames: string[] = []) => {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, "0");
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const year = now.getFullYear();
 
-  return `Rekap MCU Jan-Des 2022-${day}${month}${year}.pdf`;
+  const normalizedNames = filenames
+    .map((filename) => normalizeFilenamePart(filename))
+    .filter(Boolean);
+
+  let baseTitle = "Rekap Excel";
+
+  if (normalizedNames.length === 1) {
+    baseTitle = normalizedNames[0];
+  } else if (normalizedNames.length > 1) {
+    const monthIndexes = normalizedNames.map((filename) =>
+      getMonthIndexFromFilename(filename),
+    );
+    const commonTitle = buildCommonTitle(normalizedNames);
+    const years = normalizedNames
+      .map((filename) => extractYear(filename))
+      .filter(Boolean);
+
+    if (commonTitle && monthIndexes.every((monthIndex) => monthIndex !== -1)) {
+      const firstMonth = monthShortLabels[monthIndexes[0]];
+      const lastMonth = monthShortLabels[monthIndexes[monthIndexes.length - 1]];
+      const periodLabel =
+        firstMonth === lastMonth ? firstMonth : `${firstMonth}-${lastMonth}`;
+      const yearLabel =
+        new Set(years).size === 1 && years[0] ? ` ${years[0]}` : "";
+
+      baseTitle = `${commonTitle} ${periodLabel}${yearLabel}`.trim();
+    } else {
+      baseTitle = `${normalizedNames[0]} Gabungan`;
+    }
+  }
+
+  return `${baseTitle}-${day}${month}${year}.pdf`;
 };
 
-const extractFilename = (contentDispositionHeader?: string) => {
+const extractFilename = (
+  contentDispositionHeader?: string,
+  uploadedFilenames: string[] = [],
+) => {
   if (!contentDispositionHeader) {
-    return buildPdfFilename();
+    return buildPdfFilename(uploadedFilenames);
   }
 
   const filenameMatch = contentDispositionHeader.match(
     /filename="?([^";]+)"?/i,
   );
-  return filenameMatch?.[1] || buildPdfFilename();
+  return filenameMatch?.[1] || buildPdfFilename(uploadedFilenames);
 };
 
 const getApiErrorMessage = async (error: unknown) => {
@@ -205,6 +304,7 @@ export default function ExcelToPdfPage() {
       anchor.href = downloadUrl;
       anchor.download = extractFilename(
         response.headers["content-disposition"],
+        queuedFiles.map((queuedFile) => queuedFile.file.name),
       );
       document.body.append(anchor);
       anchor.click();
