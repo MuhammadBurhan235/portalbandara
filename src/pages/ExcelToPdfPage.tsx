@@ -1,5 +1,6 @@
 import axios from "axios";
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowDown,
