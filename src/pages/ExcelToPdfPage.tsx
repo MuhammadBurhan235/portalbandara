@@ -295,7 +295,7 @@ export default function ExcelToPdfPage() {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        timeout: 120000,
+        timeout: 300000,
       });
 
       const blob = new Blob([response.data], { type: "application/pdf" });
